@@ -1,0 +1,8 @@
+{
+  "name": "scriptshell-script-author",
+  "description": "Teaches any model to author, validate, and publish scripts for the ScriptShell desktop app (manifest v3): write a manifest.json + entrypoint, validate with the scriptshell CLI / MCP, and package for a ScriptShell registry.",
+  "version": "0.1.0",
+  "author": { "name": "ScriptShell" },
+  "homepage": "https://github.com/Ultimatule1337/scriptshell-script-author",
+  "keywords": ["scriptshell", "manifest", "script-authoring", "registry", "mcp"]
+}

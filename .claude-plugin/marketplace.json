@@ -1,0 +1,11 @@
+{
+  "name": "scriptshell",
+  "owner": { "name": "ScriptShell" },
+  "plugins": [
+    {
+      "name": "scriptshell-script-author",
+      "source": "./",
+      "description": "Author, validate, and publish scripts for the ScriptShell desktop app (manifest v3)."
+    }
+  ]
+}
