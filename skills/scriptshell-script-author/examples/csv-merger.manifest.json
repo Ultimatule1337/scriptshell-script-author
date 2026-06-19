@@ -1,0 +1,67 @@
+{
+  "$schema": "https://scriptshell.dev/schema/manifest-v3.json",
+  "id": "csv-merger",
+  "name": "CSV Merger",
+  "version": "1.1.0",
+  "description": "Merge multiple CSV files into one",
+  "tags": ["csv", "merge", "data"],
+  "capabilities": {
+    "actions": ["merge"],
+    "domains": ["csv"],
+    "keywords": ["combine csv", "concatenate csv", "join csv files"]
+  },
+  "runtime": {
+    "engine": "python",
+    "minVersion": "3.8",
+    "entrypoint": "script.py"
+  },
+  "input": {
+    "mode": "multiple",
+    "minFiles": 2,
+    "maxFiles": 100,
+    "accept": [".csv", ".tsv"],
+    "dragDropLabel": "Drop CSV files here"
+  },
+  "output": {
+    "mode": "file",
+    "nameTemplate": "merged_{{timestamp}}.csv",
+    "extensions": [".csv"],
+    "preview": { "type": "table", "maxRows": 100 }
+  },
+  "args": [
+    {
+      "id": "delimiter",
+      "type": "select",
+      "label": "Delimiter",
+      "default": ",",
+      "required": true,
+      "options": [
+        { "value": ",", "label": "Comma (,)" },
+        { "value": ";", "label": "Semicolon (;)" },
+        { "value": "\\t", "label": "Tab" },
+        { "value": "|", "label": "Pipe (|)" }
+      ]
+    },
+    {
+      "id": "has_header",
+      "type": "boolean",
+      "label": "First row is a header",
+      "default": true,
+      "description": "If on, keep the header from the first file and skip it in the rest. If off, merge every row of every file."
+    }
+  ],
+  "execution": {
+    "command": "{{runtime}} {{entrypoint}} --input {{inputFiles}} --output {{output}} --delimiter {{args.delimiter}} --has-header {{args.has_header}}",
+    "timeout": 300,
+    "workingDir": "script",
+    "env": { "PYTHONUNBUFFERED": "1" }
+  },
+  "progress": {
+    "type": "percent",
+    "pattern": "^PROGRESS:(\\d+)$"
+  },
+  "platform": {
+    "os": ["windows", "macos", "linux"],
+    "arch": ["x64", "arm64"]
+  }
+}
