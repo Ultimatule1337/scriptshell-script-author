@@ -36,7 +36,8 @@ Required fields have no default; everything else is optional with the default sh
 | `args` | array | no | form fields |
 | `argGroups` | array | no | grouping/collapsing of args |
 | `execution` | object | **yes** | command + timeout + env |
-| `progress` | object | no | progress parsing |
+| `progress` | object | no | progress parsing (`percent` regex or `structured` sentinel) |
+| `stages` | array | no | pipeline steps shown as a list; `[{ id, label, weight? }]` |
 | `platform` | object | no | `{ os[], arch[] }` gating |
 | `registry` | object | no | registry metadata (category, featured, …) |
 
@@ -141,10 +142,40 @@ Command tokens: `{{runtime}}`, `{{entrypoint}}`, `{{input}}` (first file), `{{in
 are auto-quoted; don't add your own quotes around tokens.
 
 ## progress
+Two modes.
+
+**`percent` (simple regex):**
 ```json
 "progress": { "type": "percent", "pattern": "^PROGRESS:(\\d+)$" }
 ```
 The regex must have one capture group with the percent. Your script prints `PROGRESS:NN` to stdout.
+
+**`structured` (sentinel — for multi-step scripts):**
+```json
+"progress": { "type": "structured" }
+```
+Your script emits JSON sentinel lines on stdout, each prefixed with `@@scriptshell `:
+```
+@@scriptshell {"progress": 42}
+@@scriptshell {"stage": "resize", "progress": 10, "message": "image 3/10"}
+@@scriptshell {"stage": "resize", "status": "done"}
+@@scriptshell {"message": "warming up", "indeterminate": true}
+```
+Fields (all optional): `progress` (0–100), `stage` (a `stages[].id`), `status` (`start`|`done`),
+`message`, `indeterminate`. Non-sentinel stdout lines stream to the log panel.
+
+## stages
+Optional. Declares the pipeline steps so the app renders a step list and computes overall progress
+from per-stage weights. Pair with `progress.type = "structured"` and emit `stage`/`status` events.
+```json
+"stages": [
+  { "id": "load",   "label": "Loading",  "weight": 1 },
+  { "id": "resize", "label": "Resizing", "weight": 3 },
+  { "id": "save",   "label": "Saving",   "weight": 1 }
+]
+```
+`weight` defaults to `1`. Overall percent = weighted sum of completed stages + the current stage's
+progress fraction.
 
 ## platform
 ```json

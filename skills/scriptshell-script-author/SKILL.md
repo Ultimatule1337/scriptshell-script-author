@@ -48,6 +48,12 @@ Keep the entrypoint and manifest in **one folder**; the folder name usually matc
 `id`. When packaged for a registry the zip must contain `manifest.json` + entrypoint **at the
 archive root** (no nested folder).
 
+**Multi-file scripts / pipelines.** The folder may contain as many files as you need. The file in
+`runtime.entrypoint` is the **orchestrator** — there is no fixed name; it can import or invoke any
+sibling files (e.g. `lib/util.py`, `steps/step1.py`). Subdirectories are preserved on package and
+install, and the script runs with its own folder as the working directory. Orchestrate the pipeline
+inside the entrypoint in your language — there is no separate "pipeline" manifest format.
+
 ## The execution model (how your command actually runs)
 
 ScriptShell renders `execution.command` as a **Handlebars template**, splits it into a real
@@ -84,13 +90,23 @@ env vars: `SCRIPTSHELL=1`, `SCRIPTSHELL_VERSION`, `SCRIPTSHELL_INPUT_COUNT`, plu
 
 ## Progress & logging conventions
 
-- **Progress:** print lines `PROGRESS:<n>` (0–100) to **stdout**; declare it in the manifest:
-  `"progress": { "type": "percent", "pattern": "^PROGRESS:(\\d+)$" }`. Flush after each line.
+- **Progress (simple):** print lines `PROGRESS:<n>` (0–100) to **stdout**; declare it in the
+  manifest: `"progress": { "type": "percent", "pattern": "^PROGRESS:(\\d+)$" }`. Flush after each line.
+- **Progress (structured — for multi-step scripts):** set `"progress": { "type": "structured" }`
+  and emit JSON sentinel lines on **stdout**, each prefixed with `@@scriptshell `:
+  ```
+  @@scriptshell {"stage": "resize", "progress": 10, "message": "image 3/10"}
+  @@scriptshell {"stage": "resize", "status": "done"}
+  @@scriptshell {"message": "warming up", "indeterminate": true}
+  ```
+  Fields (all optional): `progress` (0–100), `stage` (a `stages[].id`), `status` (`start`|`done`),
+  `message`, `indeterminate`. Pair with a `stages` array (see `references/manifest.md`) so the app
+  shows a step list and computes overall progress from per-stage weights.
 - **Logs:** write human-readable messages to **stderr** (or stdout lines that don't match the
-  progress pattern) — they stream into the ScriptShell log panel.
+  progress pattern / sentinel) — they stream into the ScriptShell log panel.
 - **Exit code:** `0` = success; non-zero = failure (the last log line becomes the error message).
 - On Windows, avoid relying on a trailing `\r`; ScriptShell trims it before progress parsing, but
-  keep progress lines exactly `PROGRESS:NN`.
+  keep progress/sentinel lines exact.
 
 ## Validate & scaffold (don't hand-wave the contract)
 
